@@ -1,6 +1,8 @@
 # Campus LMS (Okta demo)
 
-Learning management demo that mirrors the [SIS demo](../sisDemo) stack and integrates with it via **Okta Cross App Access (ID-JAG)**.
+> 🤖 **Setting this up with an AI coding agent?** Point it at [README-AGENT.md](README-AGENT.md) — a phased, verification-driven runbook written for agents.
+
+Learning management demo that mirrors the [SIS demo](https://github.com/barneslardo/sis-demo) stack and integrates with it via **Okta Cross App Access (ID-JAG)**.
 
 ## What it demonstrates
 
@@ -57,10 +59,10 @@ For Cross App Access, also place `secrets/agent-private-key.json` (reuse SIS age
 ## Quick start (local)
 
 ```bash
-cd ~/lms
+cd super-lms
 cp .env.example .env
-# Fill OKTA_OIDC_* and optionally copy agent key from SIS:
-#   cp ~/sisDemo/secrets/agent-private-key.json ~/lms/secrets/
+# Fill OKTA_OIDC_* and optionally copy agent key from the sis-demo checkout:
+#   cp ../sis-demo/secrets/agent-private-key.json secrets/
 
 docker compose up -d
 pnpm install
@@ -113,7 +115,7 @@ SIS must be reachable and the user must exist there (same email / Okta subject) 
 
 ## Demo walkthrough
 
-1. Start SIS (`~/sisDemo`) and this LMS.
+1. Start SIS (the [sis-demo](https://github.com/barneslardo/sis-demo) repo) and this LMS.
 2. Sign in to LMS with a Students-group user (Okta or Dev login).
 3. On the dashboard, confirm the **SIS profile** panel and course cards.
 4. Click **Sync from SIS** to re-run ID-JAG → SIS fetch → content generation.
