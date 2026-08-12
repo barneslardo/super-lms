@@ -1,0 +1,9 @@
+node_modules
+dist
+.env
+*.log
+.DS_Store
+apps/api/prisma/migrations/**/migration_lock.toml
+secrets/*.json
+!secrets/.gitkeep
+!secrets/*.public.json

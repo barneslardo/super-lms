@@ -1,0 +1,20 @@
+{
+  "name": "lms-demo",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --parallel --filter @lms/api --filter @lms/web dev",
+    "dev:api": "pnpm --filter @lms/api dev",
+    "dev:web": "pnpm --filter @lms/web dev",
+    "build": "pnpm --filter @lms/shared build && pnpm --filter @lms/api build && pnpm --filter @lms/web build",
+    "db:generate": "pnpm --filter @lms/api db:generate",
+    "db:migrate": "pnpm --filter @lms/api db:migrate",
+    "db:seed": "pnpm --filter @lms/api db:seed",
+    "db:push": "pnpm --filter @lms/api db:push"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["@prisma/client", "@prisma/engines", "prisma", "esbuild"]
+  }
+}

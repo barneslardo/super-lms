@@ -1,0 +1,129 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  admin
+  student
+}
+
+model User {
+  id          String       @id @default(uuid())
+  oktaId      String?      @unique
+  email       String       @unique
+  role        Role         @default(student)
+  active      Boolean      @default(true)
+  firstName   String       @default("")
+  lastName    String       @default("")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  enrollments Enrollment[]
+  sisSnapshot SisSnapshot?
+  progress    Progress[]
+
+  @@map("users")
+}
+
+model Course {
+  id          String       @id @default(uuid())
+  code        String       @unique
+  title       String
+  majorTag    String       @default("")
+  description String       @default("")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  modules     Module[]
+  assignments Assignment[]
+  enrollments Enrollment[]
+
+  @@map("courses")
+}
+
+model Module {
+  id        String   @id @default(uuid())
+  courseId  String
+  title     String
+  body      String   @default("")
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  progress  Progress[]
+
+  @@index([courseId])
+  @@map("modules")
+}
+
+model Assignment {
+  id        String   @id @default(uuid())
+  courseId  String
+  title     String
+  body      String   @default("")
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  progress  Progress[]
+
+  @@index([courseId])
+  @@map("assignments")
+}
+
+model Enrollment {
+  id        String   @id @default(uuid())
+  userId    String
+  courseId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@map("enrollments")
+}
+
+model Progress {
+  id           String      @id @default(uuid())
+  userId       String
+  moduleId     String?
+  assignmentId String?
+  completed    Boolean     @default(false)
+  completedAt  DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  module       Module?     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  assignment   Assignment? @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, moduleId])
+  @@unique([userId, assignmentId])
+  @@index([userId])
+  @@map("progress")
+}
+
+model SisSnapshot {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  firstName        String   @default("")
+  lastName         String   @default("")
+  email            String   @default("")
+  major            String   @default("")
+  minor            String   @default("")
+  concentration    String   @default("")
+  enrollmentStatus Boolean  @default(false)
+  enrolledClasses  Json     @default("[]")
+  academicStanding String   @default("")
+  rawJson          Json?
+  syncedAt         DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sis_snapshots")
+}
