@@ -7,3 +7,5 @@ apps/api/prisma/migrations/**/migration_lock.toml
 secrets/*.json
 !secrets/.gitkeep
 !secrets/*.public.json
+
+*.bak.*
