@@ -8,7 +8,6 @@ import { ZodError } from "zod";
 import { config, isProduction } from "./config.js";
 import { errorHandler, sendError } from "./lib/errors.js";
 import { requestId } from "./middleware/requestId.js";
-import { mountLmsMcpRoutes } from "./mcp-routes.js";
 import { authRouter } from "./routes/auth.js";
 import { coursesRouter } from "./routes/courses.js";
 import { studyChatRouter } from "./routes/study-chat.js";
@@ -72,9 +71,6 @@ app.get("/health", (_req, res) => {
     sisApiUrl: config.sisApiUrl,
   });
 });
-
-// OAuth-protected MCP endpoint (registrable in Okta MCP Servers)
-mountLmsMcpRoutes(app);
 
 app.use("/auth", authRouter);
 app.use("/api/v1", apiLimiter, coursesRouter);
