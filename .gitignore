@@ -9,3 +9,6 @@ secrets/*.json
 !secrets/*.public.json
 
 *.bak.*
+
+# TS incremental build artifacts
+*.tsbuildinfo

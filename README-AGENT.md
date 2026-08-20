@@ -14,7 +14,7 @@ A demo **Campus LMS** that mirrors the [sis-demo](https://github.com/barneslardo
 2. **All `skylarbarnes.com` / `sledai.oktapreview.com` values are the original author's deployment** — substitute your engineer's values (table below). The Students group ID in README.md (`00gzd1cnuwCW6LvaV1d7`) is from the author's org; use your own group's ID.
 3. **Ask your engineer for:** Okta org URL + admin access, an Okta API token (SSWS) if using the JWK registration script, an xAI API key only if they want the Study Helper chatbot, public DNS names if deploying.
 4. Steps marked **[HUMAN]** happen in the Okta Admin Console.
-5. Admin access in the app is partly gated by `HARDCODED_ADMIN_EMAILS` in `packages/shared/src/index.ts` — add your engineer's email there if they need the admin persona.
+5. Admin access in the app is partly gated by the `DEMO_ADMIN_EMAILS` env var (comma-separated, set in `.env`) — add your engineer's email there if they need the admin persona. It is intentionally empty by default so Okta groups are the only path to admin; do not hardcode addresses in source.
 
 ### Value substitution table
 
@@ -137,6 +137,6 @@ apps/api/src/lib/agent-token-exchange.ts  ID-JAG hop 1 + 2
 apps/api/src/lib/sis-client.ts            delegated SIS API calls
 apps/api/src/lib/content-sync.ts          SIS courses → LMS modules/assignments
 apps/api/src/routes/oidc.ts               OIDC login, agent-status, delegation-probe
-packages/shared/src/index.ts              groups, scopes, HARDCODED_ADMIN_EMAILS
+packages/shared/src/index.ts              groups, scopes, demoAdminEmails()
 scripts/register_okta_oidc_jwk.py         uploads public JWK, sets private_key_jwt
 ```

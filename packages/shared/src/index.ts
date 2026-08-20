@@ -12,15 +12,30 @@ export const SisOAuthScopes = {
 
 export type SisOAuthScope = (typeof SisOAuthScopes)[keyof typeof SisOAuthScopes];
 
-export const HARDCODED_ADMIN_EMAILS = [
-  "demo-admin-1@example.com",
-  "demo-admin-2@example.com",
-  "demo-admin-3@example.com",
-] as const;
+/**
+ * Demo admins — always granted the admin role regardless of Okta groups.
+ *
+ * This is an authorization bypass that runs BEFORE the Okta group checks, so
+ * the list is deliberately not baked into source: supply it per deployment via
+ * the DEMO_ADMIN_EMAILS env var (comma-separated). It defaults to empty, which
+ * makes Okta group membership the only path to admin.
+ *
+ * The browser bundle imports this module, so the env read is lazy and reached
+ * through globalThis rather than evaluated at module load.
+ */
+export function demoAdminEmails(): readonly string[] {
+  const env = (globalThis as { process?: { env?: Record<string, string | undefined> } })
+    .process?.env;
+  const raw = env?.DEMO_ADMIN_EMAILS;
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+}
 
-export function isHardcodedAdmin(email: string): boolean {
-  const normalized = email.trim().toLowerCase();
-  return (HARDCODED_ADMIN_EMAILS as readonly string[]).includes(normalized);
+export function isDemoAdmin(email: string): boolean {
+  return demoAdminEmails().includes(email.trim().toLowerCase());
 }
 
 /** Same Okta Students group as the SIS demo (sledai.oktapreview.com). */
@@ -52,14 +67,14 @@ export function isEnrollmentAdminGroup(groups: string[]): boolean {
  * Returns null when the user is not authorized for the LMS.
  */
 export function resolveOidcUserRole(email: string, groups: string[] = []): UserRole | null {
-  if (isHardcodedAdmin(email)) return "admin";
+  if (isDemoAdmin(email)) return "admin";
   if (isEnrollmentAdminGroup(groups)) return "admin";
   if (isStudentsGroup(groups)) return "student";
   return null;
 }
 
 export function resolvePersonaLabel(email: string, groups: string[] = []): string | undefined {
-  if (isHardcodedAdmin(email)) return "Platform Admin";
+  if (isDemoAdmin(email)) return "Platform Admin";
   if (isEnrollmentAdminGroup(groups)) return "Enrollment Admin";
   if (isStudentsGroup(groups)) return "Student";
   return undefined;
