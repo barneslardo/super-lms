@@ -1,23 +1,46 @@
 import { useRef, useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { AuthUser } from "@lms/shared";
 import { api, type StudyChatMessage } from "../api";
 
 export function StudyHelper({ user }: { user: AuthUser }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isWide, setIsWide] = useState(false);
   const [messages, setMessages] = useState<StudyChatMessage[]>([]);
   const [draft, setDraft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const lastUserRef = useRef<HTMLDivElement>(null);
+  const spacerRef = useRef<HTMLDivElement>(null);
 
   const send = useMutation({
     mutationFn: (nextMessages: StudyChatMessage[]) => api.studyChat(nextMessages),
   });
 
+  // Keep the latest question at the top of the panel so the answer reads
+  // downward from it, instead of dropping the reader at the bottom of a long
+  // explanation they then have to scroll back up through.
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, send.isPending]);
+    const list = scrollRef.current;
+    const anchor = lastUserRef.current;
+    if (!list) return;
+    if (!anchor) {
+      list.scrollTo({ top: list.scrollHeight, behavior: "smooth" });
+      return;
+    }
+    const spacer = spacerRef.current;
+    if (spacer) {
+      spacer.style.height = "0px";
+      const tail = list.scrollHeight - anchor.offsetTop;
+      spacer.style.height = `${Math.max(0, list.clientHeight - tail - 12)}px`;
+    }
+    list.scrollTo({ top: Math.max(0, anchor.offsetTop - 12), behavior: "smooth" });
+  }, [messages, send.isPending, send.isError, isOpen, isWide]);
 
   if (user.role !== "student") return null;
+
+  const lastUserIndex = messages.map((m) => m.role).lastIndexOf("user");
 
   function handleSend() {
     const content = draft.trim();
@@ -26,6 +49,15 @@ export function StudyHelper({ user }: { user: AuthUser }) {
     setMessages(nextMessages);
     setDraft("");
     send.mutate(nextMessages, {
+      onSuccess: (res) => {
+        setMessages((prev) => [...prev, { role: "assistant", content: res.data.reply }]);
+      },
+    });
+  }
+
+  function retryLast() {
+    if (send.isPending || !messages.length) return;
+    send.mutate(messages, {
       onSuccess: (res) => {
         setMessages((prev) => [...prev, { role: "assistant", content: res.data.reply }]);
       },
@@ -44,20 +76,31 @@ export function StudyHelper({ user }: { user: AuthUser }) {
       </button>
 
       {isOpen && (
-        <div className="study-helper-panel">
+        <div className={`study-helper-panel${isWide ? " wide" : ""}`}>
           <div className="study-helper-header">
             <div>
               <strong>Study Helper</strong>
               <span>Scoped to your enrolled courses</span>
             </div>
-            <button
-              type="button"
-              className="btn btn-ghost"
-              onClick={() => setIsOpen(false)}
-              aria-label="Close"
-            >
-              ✕
-            </button>
+            <div className="study-helper-header-actions">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => setIsWide((v) => !v)}
+                aria-label={isWide ? "Shrink panel" : "Expand panel"}
+                title={isWide ? "Shrink" : "Expand"}
+              >
+                {isWide ? "⤡" : "⤢"}
+              </button>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => setIsOpen(false)}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
           </div>
 
           <div className="study-helper-messages" ref={scrollRef}>
@@ -67,26 +110,35 @@ export function StudyHelper({ user }: { user: AuthUser }) {
                 or study strategies.
               </p>
             )}
-            {messages.map((m, i) => (
-              <div
-                key={i}
-                className={
-                  m.role === "user"
-                    ? "study-helper-message study-helper-message-user"
-                    : "study-helper-message study-helper-message-assistant"
-                }
-              >
-                {m.content}
-              </div>
-            ))}
+            {messages.map((m, i) =>
+              m.role === "user" ? (
+                <div
+                  key={i}
+                  className="study-helper-message study-helper-message-user"
+                  ref={i === lastUserIndex ? lastUserRef : undefined}
+                >
+                  {m.content}
+                </div>
+              ) : (
+                <div key={i} className="study-helper-message study-helper-message-assistant study-md">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+                </div>
+              )
+            )}
             {send.isPending && (
               <div className="study-helper-message study-helper-message-assistant study-helper-typing">
                 Thinking…
               </div>
             )}
-            {send.isError && (
-              <div className="error">{(send.error as Error).message}</div>
+            {send.isError && !send.isPending && (
+              <div className="study-helper-error">
+                <span>{(send.error as Error).message}</span>
+                <button type="button" className="btn btn-ghost" onClick={retryLast}>
+                  Try again
+                </button>
+              </div>
             )}
+            <div ref={spacerRef} aria-hidden="true" className="study-helper-spacer" />
           </div>
 
           <div className="study-helper-composer">
