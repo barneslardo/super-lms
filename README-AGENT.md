@@ -111,7 +111,7 @@ Prereqs: sis-demo running with its custom AS + agent registration done (sis-demo
 
 ### 2c. Study Helper chatbot (optional)
 
-Set `XAI_API_KEY` (from the engineer). Model via `XAI_MODEL`.
+Set `LLM_BASE_URL` and `LLM_API_KEY` for an OpenAI-compatible gateway (e.g. LiteLLM). Students pick the model in the Study Helper panel (`gemma4` or `grok-4.3`); `LLM_MODEL` sets the default (`gemma4`).
 
 ## Phase 3 — Deploying (EC2 or similar)
 

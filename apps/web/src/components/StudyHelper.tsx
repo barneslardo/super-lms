@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { AuthUser } from "@lms/shared";
@@ -10,12 +10,24 @@ export function StudyHelper({ user }: { user: AuthUser }) {
   const [isWide, setIsWide] = useState(false);
   const [messages, setMessages] = useState<StudyChatMessage[]>([]);
   const [draft, setDraft] = useState("");
+  const [model, setModel] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastUserRef = useRef<HTMLDivElement>(null);
   const spacerRef = useRef<HTMLDivElement>(null);
 
+  const modelsQuery = useQuery({
+    queryKey: ["study-chat-models"],
+    queryFn: api.studyChatModels,
+    enabled: user.role === "student",
+    staleTime: 5 * 60 * 1000,
+  });
+  const models = modelsQuery.data?.data.models ?? [];
+  // Until the student picks one, follow the server's default (gemma4).
+  const selectedModel = model || modelsQuery.data?.data.defaultModel || "";
+
   const send = useMutation({
-    mutationFn: (nextMessages: StudyChatMessage[]) => api.studyChat(nextMessages),
+    mutationFn: (nextMessages: StudyChatMessage[]) =>
+      api.studyChat(nextMessages, selectedModel || undefined),
   });
 
   // Keep the latest question at the top of the panel so the answer reads
@@ -102,6 +114,24 @@ export function StudyHelper({ user }: { user: AuthUser }) {
               </button>
             </div>
           </div>
+
+          {models.length > 0 && (
+            <div className="study-helper-model">
+              <label htmlFor="study-helper-model">Model</label>
+              <select
+                id="study-helper-model"
+                value={selectedModel}
+                onChange={(e) => setModel(e.target.value)}
+                disabled={send.isPending}
+              >
+                {models.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="study-helper-messages" ref={scrollRef}>
             {messages.length === 0 && (

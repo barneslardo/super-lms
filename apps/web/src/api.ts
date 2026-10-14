@@ -77,6 +77,8 @@ export type StudyChatMessage = {
   content: string;
 };
 
+export type StudyChatModel = { id: string; label: string };
+
 export type CourseDetail = {
   id: string;
   enrollmentId: string;
@@ -129,9 +131,13 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
-  studyChat: (messages: StudyChatMessage[]) =>
-    fetchJson<{ data: { reply: string } }>("/api/v1/study-chat", {
+  studyChatModels: () =>
+    fetchJson<{ data: { models: StudyChatModel[]; defaultModel: string | null } }>(
+      "/api/v1/study-chat/models"
+    ),
+  studyChat: (messages: StudyChatMessage[], model?: string) =>
+    fetchJson<{ data: { reply: string; model: string } }>("/api/v1/study-chat", {
       method: "POST",
-      body: JSON.stringify({ messages }),
+      body: JSON.stringify({ messages, model }),
     }),
 };

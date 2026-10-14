@@ -627,6 +627,33 @@ code {
   flex: none;
 }
 
+.study-helper-model {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 1.1rem;
+  background: var(--slate-100);
+  border-bottom: 1px solid var(--slate-200);
+  font-size: 0.8rem;
+  color: var(--slate-700);
+}
+
+.study-helper-model select {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--slate-200);
+  border-radius: 8px;
+  background: var(--white);
+  padding: 0.3rem 0.5rem;
+  font: inherit;
+  color: var(--slate-950);
+}
+
+.study-helper-model select:focus {
+  outline: 2px solid var(--teal-600);
+  outline-offset: 1px;
+}
+
 .study-helper-messages {
   flex: 1;
   overflow-y: auto;

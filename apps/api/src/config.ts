@@ -114,10 +114,15 @@ export const config = {
     ),
   },
 
+  // All LLM traffic goes through an OpenAI-compatible gateway (LiteLLM) with a
+  // per-site key, so usage and spend are tracked per demo. Supported models:
+  // gemma4 (self-hosted, default) and grok-4.3.
   studyChat: {
-    apiKey: optional("XAI_API_KEY"),
-    model: optional("XAI_MODEL", "grok-4.3"),
-    enabled: Boolean(optional("XAI_API_KEY")),
+    baseUrl: optional("LLM_BASE_URL"),
+    apiKey: optional("LLM_API_KEY"),
+    /** Default model; students can switch between the supported models in the Study Helper. */
+    model: optional("LLM_MODEL", "gemma4"),
+    enabled: Boolean(optional("LLM_BASE_URL") && optional("LLM_API_KEY")),
   },
 };
 

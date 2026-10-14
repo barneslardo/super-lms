@@ -2,7 +2,7 @@ import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import { z } from "zod";
 import { requireAuth } from "../middleware/auth.js";
-import { askStudyHelper } from "../lib/study-chat.js";
+import { askStudyHelper, listStudyChatModels } from "../lib/study-chat.js";
 
 export const studyChatRouter = Router();
 
@@ -25,13 +25,18 @@ const StudyChatRequestSchema = z.object({
     )
     .min(1)
     .max(20),
+  model: z.string().max(64).optional(),
+});
+
+studyChatRouter.get("/study-chat/models", (_req, res) => {
+  res.json({ data: listStudyChatModels() });
 });
 
 studyChatRouter.post("/study-chat", studyChatLimiter, async (req, res, next) => {
   try {
-    const { messages } = StudyChatRequestSchema.parse(req.body);
-    const reply = await askStudyHelper(req.user!.id, messages);
-    res.json({ data: { reply } });
+    const { messages, model } = StudyChatRequestSchema.parse(req.body);
+    const result = await askStudyHelper(req.user!.id, messages, model);
+    res.json({ data: result });
   } catch (err) {
     next(err);
   }

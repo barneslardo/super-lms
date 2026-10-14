@@ -7,8 +7,34 @@ export type StudyChatMessage = {
   content: string;
 };
 
-const XAI_CHAT_URL = "https://api.x.ai/v1/chat/completions";
 const MAX_MODULE_BODY_CHARS = 600;
+
+export type StudyChatModel = { id: string; label: string };
+
+// Every model goes through the LLM gateway (LiteLLM), which tracks usage per
+// demo site. gemma4 is self-hosted; grok-4.3 is xAI, and LiteLLM also falls
+// back to it when gemma4 fails.
+const MODEL_CATALOG: StudyChatModel[] = [
+  { id: "gemma4", label: "Gemma 4 (self-hosted)" },
+  { id: "grok-4.3", label: "Grok 4.3 (xAI)" },
+];
+
+export function listStudyChatModels(): { models: StudyChatModel[]; defaultModel: string | null } {
+  if (!config.studyChat.enabled) return { models: [], defaultModel: null };
+  const fallback = MODEL_CATALOG.find((m) => m.id === config.studyChat.model) ?? MODEL_CATALOG[0];
+  return { models: MODEL_CATALOG, defaultModel: fallback.id };
+}
+
+// Resolve strictly against the catalog: a model the browser asks for that isn't
+// on it is ignored (and logged) rather than forwarded to the gateway.
+function resolveModel(requested: string | undefined, defaultModel: string): string {
+  if (!requested) return defaultModel;
+  if (MODEL_CATALOG.some((m) => m.id === requested)) return requested;
+  console.warn(
+    `[study-chat] ignoring requested model "${requested}"; allowed: ${MODEL_CATALOG.map((m) => m.id).join(", ")}`
+  );
+  return defaultModel;
+}
 
 async function buildSystemPrompt(userId: string): Promise<string> {
   const enrollments = await prisma.enrollment.findMany({
@@ -60,22 +86,25 @@ async function buildSystemPrompt(userId: string): Promise<string> {
 
 export async function askStudyHelper(
   userId: string,
-  messages: StudyChatMessage[]
-): Promise<string> {
+  messages: StudyChatMessage[],
+  requestedModel?: string
+): Promise<{ reply: string; model: string }> {
   if (!config.studyChat.enabled) {
     throw new AppError(503, "STUDY_CHAT_DISABLED", "Study Helper is not configured");
   }
 
+  const model = resolveModel(requestedModel, listStudyChatModels().defaultModel ?? MODEL_CATALOG[0].id);
+
   const systemPrompt = await buildSystemPrompt(userId);
 
-  const res = await fetch(XAI_CHAT_URL, {
+  const res = await fetch(`${config.studyChat.baseUrl.replace(/\/+$/, "")}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${config.studyChat.apiKey}`,
     },
     body: JSON.stringify({
-      model: config.studyChat.model,
+      model,
       messages: [{ role: "system", content: systemPrompt }, ...messages],
       temperature: 0.4,
     }),
@@ -83,7 +112,7 @@ export async function askStudyHelper(
 
   if (!res.ok) {
     const errBody = await res.text().catch(() => "");
-    console.error(`[study-chat] xAI request failed (${res.status}): ${errBody}`);
+    console.error(`[study-chat] LLM request failed (${res.status}): ${errBody}`);
     throw new AppError(502, "STUDY_CHAT_UPSTREAM_ERROR", "Study Helper is temporarily unavailable");
   }
 
@@ -94,5 +123,5 @@ export async function askStudyHelper(
   if (!reply) {
     throw new AppError(502, "STUDY_CHAT_UPSTREAM_ERROR", "Study Helper returned an empty response");
   }
-  return reply;
+  return { reply, model };
 }
