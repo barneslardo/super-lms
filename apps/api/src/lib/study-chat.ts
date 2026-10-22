@@ -13,10 +13,11 @@ export type StudyChatModel = { id: string; label: string };
 
 // Every model goes through the LLM gateway (LiteLLM), which tracks usage per
 // demo site. gemma4 is self-hosted; grok-4.3 is xAI, and LiteLLM also falls
-// back to it when gemma4 fails.
+// back to it when gemma4 fails. claude-sonnet-5-5 is Anthropic.
 const MODEL_CATALOG: StudyChatModel[] = [
   { id: "gemma4", label: "Gemma 4 (self-hosted)" },
   { id: "grok-4.3", label: "Grok 4.3 (xAI)" },
+  { id: "claude-sonnet-5-5", label: "Claude Sonnet 5.5 (Anthropic)" },
 ];
 
 export function listStudyChatModels(): { models: StudyChatModel[]; defaultModel: string | null } {

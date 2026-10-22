@@ -116,7 +116,7 @@ export const config = {
 
   // All LLM traffic goes through an OpenAI-compatible gateway (LiteLLM) with a
   // per-site key, so usage and spend are tracked per demo. Supported models:
-  // gemma4 (self-hosted, default) and grok-4.3.
+  // gemma4 (self-hosted, default), grok-4.3 and claude-sonnet-5-5.
   studyChat: {
     baseUrl: optional("LLM_BASE_URL"),
     apiKey: optional("LLM_API_KEY"),
